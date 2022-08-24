@@ -38,7 +38,7 @@ logging.basicConfig(
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в Telegram чат,
+    """Отправляет сообщение в Telegram чат.
     определяемый переменной окружения TELEGRAM_CHAT_ID.
     """
     logger.info('Пытаюсь отправить сообщение')
@@ -105,7 +105,7 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """Проверяет доступность переменных окружения,
+    """Проверяет доступность переменных окружения.
     которые необходимы для работы программы.
     """
     if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
