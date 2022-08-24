@@ -122,8 +122,7 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     start_message = 'Бот начал свою работу!'
     send_message(bot, start_message)
-    day = 43200
-    current_timestamp = 1660676115 - day * 30
+    current_timestamp = int(time.time())
     status_message = ''
     error_message = ''
     while True:
