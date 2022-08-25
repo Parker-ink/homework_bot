@@ -10,7 +10,7 @@ import telegram
 
 from dotenv import load_dotenv
 
-from exceptions import ResponseNotOK, SendMessageFailure
+from exceptions import ResponseNotOK
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -30,12 +30,6 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
-    handlers=[logging.StreamHandler()]
-)
-
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат.
@@ -45,7 +39,7 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError:
-        raise SendMessageFailure('Ошибка отправки сообщения')
+        logger.error('Ошибка отправки сообщения')
     else:
         logger.info('Сообщение отправлено!')
 
@@ -77,15 +71,15 @@ def check_response(response):
     elif 'homeworks' not in response:
         text = 'В полученном словаре отсутствует "homeworks"'
         raise ValueError(text)
-    homework = response['homeworks']
-    if homework[0] is None:
+    homeworks = response['homeworks']
+    if homeworks[0] is None:
         text = 'Отсутсвует список работ'
         raise ValueError(text)
-    elif not isinstance(homework[0], dict):
-        text = f'Ошибка типа! {homework} не словарь'
+    elif not isinstance(homeworks[0], dict):
+        text = f'Ошибка типа! {homeworks} не словарь'
         raise TypeError(text)
     else:
-        return homework
+        return homeworks
 
 
 def parse_status(homework):
@@ -98,7 +92,7 @@ def parse_status(homework):
         homework_status = homework['status']
         verdict = HOMEWORK_STATUSES[homework_status]
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
-    except TypeError as error:
+    except KeyError as error:
         mess = f'Ошибка {error} в получении информации, Список работ пуст'
         logging.error(mess)
         return mess
@@ -108,10 +102,7 @@ def check_tokens():
     """Проверяет доступность переменных окружения.
     которые необходимы для работы программы.
     """
-    if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
-        return True
-    else:
-        return False
+    return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def main():
@@ -128,14 +119,17 @@ def main():
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            current_timestamp = response.get('current_date')
-            status = parse_status(check_response(response))
-            if status != status_message:
-                send_message(bot, status)
-                status_message = status
-            else:
-                info = f'Статус не изменился. Ждем еще {RETRY_TIME} сек.'
-                logger.debug(info)
+            homeworks = check_response(response)
+            for homework in homeworks:
+                status = parse_status(homework)
+                if homework['status'] == 'approved':
+                    current_timestamp = int(time.time())
+                if status != status_message:
+                    send_message(bot, status)
+                    status_message = status
+                else:
+                    info = f'Статус не изменился. Ждем еще {RETRY_TIME} сек.'
+                    logger.debug(info)
         except Exception as error:
             logger.error(error)
             message = f'Сбой в работе программы: {error}'
@@ -147,4 +141,9 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
+        handlers=[logging.StreamHandler()]
+    )
     main()
