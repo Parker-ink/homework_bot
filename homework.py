@@ -87,15 +87,16 @@ def parse_status(homework):
     В качестве параметра функция получает только один элемент
     из списка домашних работ.
     """
-    try:
-        homework_name = homework['homework_name']
-        homework_status = homework['status']
-        verdict = HOMEWORK_STATUSES[homework_status]
-        return f'Изменился статус проверки работы "{homework_name}". {verdict}'
-    except KeyError as error:
-        mess = f'Ошибка {error} в получении информации, Список работ пуст'
-        logging.error(mess)
-        return mess
+    if 'status' not in homework:
+        raise Exception('Отсутствует "status" в ответе API')
+    if 'homework_name' not in homework:
+        raise KeyError('Отсутствует "homework_name" в ответе API')
+    homework_name = homework['homework_name']
+    homework_status = homework['status']
+    if homework_status not in HOMEWORK_STATUSES:
+        raise Exception(f'Неизвестный статус домашки: {homework_status}')
+    verdict = HOMEWORK_STATUSES[homework_status]
+    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
