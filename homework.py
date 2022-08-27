@@ -88,13 +88,13 @@ def parse_status(homework):
     из списка домашних работ.
     """
     if 'status' not in homework:
-        raise Exception('Отсутствует "status" в ответе API')
+        raise KeyError('Отсутствует "status" в ответе API')
     if 'homework_name' not in homework:
         raise KeyError('Отсутствует "homework_name" в ответе API')
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status not in HOMEWORK_STATUSES:
-        raise Exception(f'Неизвестный статус домашки: {homework_status}')
+        raise KeyError(f'Неизвестный статус домашки: {homework_status}')
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
